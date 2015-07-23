@@ -1,0 +1,88 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+import os
+import sys
+import logging
+
+from subprocess import Popen
+from subprocess import PIPE
+from optparse import OptionParser
+
+IMPORTANT_EXT_SET = set(['.md', '.php'])
+
+def command_output(cmd):
+    """ Capture a command's standard output."""
+    return Popen(cmd.split(), stdout=PIPE).communicate()[0]
+
+def files_changed(look_cmd):
+    """ List the files added or updated by this transaction."""
+    def filename(line):
+        return line[4:]
+
+    def added_or_updated(line):
+        return line and line[0] in ("A", "U")
+
+    return [filename(line) for line in
+            command_output(look_cmd % "changed").split("\n")
+            if added_or_updated(line)]
+
+def file_contents(filename, look_cmd):
+    """Return a file's contents for this transaction"""
+    return command_output("%s %s" % (look_cmd % "cat", filename))
+
+def line_number(item, content):
+    """returns the line number"""
+    return content[:item.start()].count('\n')
+
+
+def is_important_file(file_name):
+    return os.path.splitext(file_name)[1] in IMPORTANT_EXT_SET
+
+
+def check_file(look_cmd):
+    """checks Python files in this transaction"""
+
+    files_with_errors = []
+
+    for file_name in files_changed(look_cmd):
+        if not is_important_file(file_name):
+            continue
+
+        file_content = file_contents(file_name, look_cmd)
+        file_content += "\nUTF8 인코딩 체크용 한글 문장입니다"
+        try:
+            file_content.decode('utf8')
+        except UnicodeDecodeError as e:
+            line = file_content[:e.start].count('\n') + 1
+            files_with_errors.append('%s:%s: %s' % (file_name, line, 'WRONG_ENCODING_TEXT:' + repr(file_content[e.start-
+
+
+    num_failures = len(files_with_errors)
+    if num_failures > 0:
+        sys.stderr.write("Please check your files:")
+        for message in files_with_errors:
+            sys.stderr.write('\n' + message)
+
+        message = "%d error%s found by pre-commit script." % (
+            num_failures, num_failures != 1 and 's' or '')
+
+        sys.stderr.write('\n' + ('-' * len(message)) + '\n' + message)
+
+    return num_failures
+
+def main():
+    parser = OptionParser()
+    parser.add_option("-r", "--revision", help="Test mode. TXN actually refers to a revision.", action="store_true", def
+
+    (opts, (repos, txn_or_rvn)) = parser.parse_args()
+    look_opt = ("--transaction", "--revision")[opts.revision]
+    look_cmd = "svnlook %s %s %s %s" % ("%s", repos, look_opt, txn_or_rvn)
+
+    errors = 0
+    errors += check_file(look_cmd)
+
+    return errors
+
+if __name__ == "__main__":
+    sys.exit(main())
+
