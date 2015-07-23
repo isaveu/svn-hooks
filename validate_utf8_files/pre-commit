@@ -49,13 +49,13 @@ def check_file(look_cmd):
             continue
 
         file_content = file_contents(file_name, look_cmd)
-        file_content += "\nUTF8 ÀÎÄÚµù Ã¼Å©¿ë ÇÑ±Û ¹®ÀåÀÔ´Ï´Ù"
+        file_content += "\nUTF8 ì¸ì½”ë”© ì²´í¬ìš© í•œê¸€ ë¬¸ìž¥ìž…ë‹ˆë‹¤" 
         try:
-            file_content.decode('utf8')
+            file_content.decode('utf8') 
         except UnicodeDecodeError as e:
             line = file_content[:e.start].count('\n') + 1
-            files_with_errors.append('%s:%s: %s' % (file_name, line, 'WRONG_ENCODING_TEXT:' + repr(file_content[e.start-
-
+            files_with_errors.append('%s:%s: %s' % (file_name, line, 'WRONG_ENCODING_TEXT:' + repr(file_content[e.start-5:e.end+5])))
+            
 
     num_failures = len(files_with_errors)
     if num_failures > 0:
@@ -72,7 +72,7 @@ def check_file(look_cmd):
 
 def main():
     parser = OptionParser()
-    parser.add_option("-r", "--revision", help="Test mode. TXN actually refers to a revision.", action="store_true", def
+    parser.add_option("-r", "--revision", help="Test mode. TXN actually refers to a revision.", action="store_true", default=False)
 
     (opts, (repos, txn_or_rvn)) = parser.parse_args()
     look_opt = ("--transaction", "--revision")[opts.revision]
@@ -85,4 +85,3 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
-
