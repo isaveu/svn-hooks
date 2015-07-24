@@ -8,7 +8,7 @@ from subprocess import Popen
 from subprocess import PIPE
 from optparse import OptionParser
 
-IMPORTANT_EXT_SET = set(['.md', '.php'])
+IMPORTANT_EXT_SET = set(['.md', '.txt', '.php', '.lua'])
 
 def command_output(cmd):
     """ Capture a command's standard output."""
